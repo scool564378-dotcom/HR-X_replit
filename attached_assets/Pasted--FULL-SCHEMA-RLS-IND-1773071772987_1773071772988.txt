@@ -1,0 +1,105 @@
+-- =====================================================================
+-- FULL SCHEMA + RLS + INDEXES + DATA SNAPSHOT (public schema)
+-- Generated at: 2026-03-09
+-- =====================================================================
+
+BEGIN;
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- =====================================================================
+-- TABLE: public.payments
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.payments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  external_id text,
+  session_id uuid NOT NULL,
+  type text NOT NULL,
+  amount integer NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  provider text NOT NULL DEFAULT 'yookassa'::text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT payments_pkey PRIMARY KEY (id),
+  CONSTRAINT payments_amount_check CHECK ((amount > 0)),
+  CONSTRAINT payments_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text, 'refunded'::text]))),
+  CONSTRAINT payments_type_check CHECK ((type = ANY (ARRAY['full_pass'::text, 'resume_adapt'::text])))
+);
+
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "no direct read payments"
+ON public.payments
+AS PERMISSIVE
+FOR SELECT
+TO public
+USING (false);
+
+CREATE POLICY "no direct write payments"
+ON public.payments
+AS PERMISSIVE
+FOR ALL
+TO public
+USING (false)
+WITH CHECK (false);
+
+-- =====================================================================
+-- TABLE: public.resume_consents
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.resume_consents (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  session_id uuid NOT NULL,
+  consent_given boolean NOT NULL,
+  consent_date timestamp with time zone,
+  revoke_token text,
+  structured_profile jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT resume_consents_pkey PRIMARY KEY (id),
+  CONSTRAINT resume_consents_revoke_token_key UNIQUE (revoke_token)
+);
+
+ALTER TABLE public.resume_consents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "no direct read consents"
+ON public.resume_consents
+AS PERMISSIVE
+FOR SELECT
+TO public
+USING (false);
+
+CREATE POLICY "no direct write consents"
+ON public.resume_consents
+AS PERMISSIVE
+FOR ALL
+TO public
+USING (false)
+WITH CHECK (false);
+
+-- =====================================================================
+-- INDEXES (from pg_indexes)
+-- Note: indexes for PRIMARY KEY / UNIQUE constraints are auto-created.
+-- Included below for documentation completeness.
+-- =====================================================================
+-- CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id);
+-- CREATE UNIQUE INDEX resume_consents_pkey ON public.resume_consents USING btree (id);
+-- CREATE UNIQUE INDEX resume_consents_revoke_token_key ON public.resume_consents USING btree (revoke_token);
+
+-- =====================================================================
+-- DATA DUMP
+-- =====================================================================
+
+-- TABLE: public.payments
+-- 0 rows
+
+-- TABLE: public.resume_consents
+-- 0 rows
+
+-- =====================================================================
+-- EDGE FUNCTION SECRETS (names only, no values)
+-- =====================================================================
+-- LOVABLE_API_KEY
+-- OPENAI_API_KEY
+
+COMMIT;

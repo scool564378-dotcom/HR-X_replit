@@ -1,0 +1,161 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 45 20% 96%;
+    --foreground: 0 0% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 18%;
+
+    --primary: 152 30% 42%;
+    --primary-foreground: 45 20% 96%;
+
+    --secondary: 42 23% 94%;
+    --secondary-foreground: 0 0% 18%;
+
+    --muted: 42 23% 94%;
+    --muted-foreground: 0 0% 42%;
+
+    --accent: 41 60% 58%;
+    --accent-foreground: 0 0% 18%;
+
+    --success: 152 30% 42%;
+    --success-foreground: 45 20% 96%;
+
+    --warning: 41 60% 58%;
+    --warning-foreground: 0 0% 18%;
+
+    --destructive: 10 49% 53%;
+    --destructive-foreground: 45 20% 96%;
+
+    --border: 42 17% 89%;
+    --input: 42 17% 89%;
+    --ring: 152 30% 42%;
+
+    --radius: 1rem;
+    --radius-card: 1rem;
+    --radius-button: 0.75rem;
+    --radius-sheet: 1.5rem;
+
+    --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.06);
+
+    --sidebar-background: 45 20% 96%;
+    --sidebar-foreground: 0 0% 18%;
+    --sidebar-primary: 152 30% 42%;
+    --sidebar-primary-foreground: 45 20% 96%;
+    --sidebar-accent: 42 23% 94%;
+    --sidebar-accent-foreground: 0 0% 18%;
+    --sidebar-border: 42 17% 89%;
+    --sidebar-ring: 152 30% 42%;
+  }
+
+  .dark {
+    --background: 60 3% 11%;
+    --foreground: 45 15% 89%;
+
+    --card: 60 2% 16%;
+    --card-foreground: 45 15% 89%;
+
+    --popover: 60 2% 16%;
+    --popover-foreground: 45 15% 89%;
+
+    --primary: 146 30% 51%;
+    --primary-foreground: 60 3% 11%;
+
+    --secondary: 60 2% 20%;
+    --secondary-foreground: 45 15% 89%;
+
+    --muted: 60 2% 20%;
+    --muted-foreground: 60 3% 59%;
+
+    --accent: 42 68% 62%;
+    --accent-foreground: 60 3% 11%;
+
+    --success: 146 30% 51%;
+    --success-foreground: 60 3% 11%;
+
+    --warning: 42 68% 62%;
+    --warning-foreground: 60 3% 11%;
+
+    --destructive: 11 57% 61%;
+    --destructive-foreground: 60 3% 11%;
+
+    --border: 60 1% 22%;
+    --input: 60 1% 22%;
+    --ring: 146 30% 51%;
+
+    --sidebar-background: 60 3% 11%;
+    --sidebar-foreground: 45 15% 89%;
+    --sidebar-primary: 146 30% 51%;
+    --sidebar-primary-foreground: 60 3% 11%;
+    --sidebar-accent: 60 2% 20%;
+    --sidebar-accent-foreground: 45 15% 89%;
+    --sidebar-border: 60 1% 22%;
+    --sidebar-ring: 146 30% 51%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Nunito", sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      font-size: 18px;
+    }
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-bold text-foreground;
+    line-height: 1.3;
+  }
+
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-step-in {
+    animation: fadeSlideIn 0.35s ease-out;
+  }
+
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b6b6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 20px;
+    padding-right: 48px;
+  }
+}
