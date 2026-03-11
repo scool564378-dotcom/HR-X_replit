@@ -12,9 +12,9 @@ import { buildAtsKeywordReport, buildResumeText } from "@/data/mockResumeHelpers
 import { searchAllVacancies } from "@/services/jobApi";
 import { downloadPdf, downloadDocx, downloadTxt, exportJobsCsv } from "@/services/exportResume";
 import { ResultsArchive } from "@/components/ResultsArchive";
-import { Paywall, PaywallBlock } from "@/components/Paywall";
+import { Paywall, PaywallUpgradeCard, FreeContentBanner } from "@/components/Paywall";
 import { JobCard } from "@/components/JobCard";
-import { Loader2, RefreshCw, AlertCircle, FileText, FileDown, FileSpreadsheet, Info, ShieldCheck, ArrowLeft, Lock } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, FileText, FileDown, FileSpreadsheet, Info, ShieldCheck, ArrowLeft, Gift } from "lucide-react";
 
 const FREE_PREVIEW_JOBS = 3;
 
@@ -83,6 +83,8 @@ const Results = () => {
     );
   };
 
+  const jobsLoaded = !state.jobsState.isLoading && !state.jobsState.error && state.jobsState.jobs.length > 0;
+
   return (
     <AppLayout>
       <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
@@ -92,6 +94,8 @@ const Results = () => {
         </button>
         <h1 className="text-[28px] font-bold md:text-[32px]" data-testid="text-results-title">Результаты</h1>
 
+        {!hasPaid && <FreeContentBanner />}
+
         <Tabs defaultValue="resume" className="space-y-4">
           <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-card bg-secondary p-2">
             <TabsTrigger value="resume" className="min-h-[56px] rounded-button text-base" data-testid="tab-resume">Резюме</TabsTrigger>
@@ -99,6 +103,7 @@ const Results = () => {
             <TabsTrigger value="more" className="min-h-[56px] rounded-button text-base" data-testid="tab-more">Экспорт</TabsTrigger>
           </TabsList>
 
+          {/* ── RESUME TAB ── */}
           <TabsContent value="resume" className="space-y-4">
             <div className="rounded-card border border-border bg-card p-4 space-y-3">
               <p className="text-sm font-semibold">Выберите формат резюме:</p>
@@ -131,66 +136,76 @@ const Results = () => {
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">ATS-версия</span> — специальный формат для сайтов поиска работы (hh.ru, SuperJob). Содержит ключевые слова, которые помогают системе автоматически подобрать ваше резюме для подходящих вакансий. Чем больше ключевых слов совпадёт — тем выше шанс, что работодатель увидит ваше резюме.
+                    <span className="font-semibold text-foreground">ATS-версия</span> — специальный формат для сайтов поиска работы (hh.ru, SuperJob). Содержит ключевые слова, которые помогают системе автоматически подобрать ваше резюме для подходящих вакансий.
                   </p>
                 )}
               </div>
             </div>
 
-            <Paywall feature="Полное резюме">
-              <SectionCard title="Текст резюме">
-                <div className="whitespace-pre-wrap text-sm" data-testid="text-resume-content">{resumeText}</div>
-              </SectionCard>
-            </Paywall>
-
-            {hasPaid && state.resumeState.resumeMode === "ats" && (
-              <SectionCard title="Ключевые слова ATS">
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 dark:bg-emerald-950">
-                    <span className="mt-0.5 text-emerald-600">✓</span>
-                    <div>
-                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Включены в резюме:</p>
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400">{atsReport.included.join(", ")}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 dark:bg-amber-950">
-                    <span className="mt-0.5 text-amber-600">!</span>
-                    <div>
-                      <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Рекомендуем добавить:</p>
-                      <p className="text-sm text-amber-600 dark:text-amber-400">{atsReport.missing.join(", ")}</p>
-                    </div>
-                  </div>
-                </div>
-              </SectionCard>
-            )}
-
             {hasPaid ? (
-              <div className="space-y-2">
-                <p className="text-sm font-semibold">Скачать резюме:</p>
-                <p className="text-xs text-muted-foreground">Выберите удобный формат. Файл сохранится на ваше устройство.</p>
-                <div className="grid gap-2 md:grid-cols-3">
-                  <Button variant="soft" onClick={handleExportPdf} className="gap-2" data-testid="button-export-pdf">
-                    <FileText className="h-4 w-4" />
-                    Скачать PDF
-                  </Button>
-                  <Button variant="soft" onClick={handleExportDocx} className="gap-2" data-testid="button-export-docx">
-                    <FileDown className="h-4 w-4" />
-                    Скачать DOCX
-                  </Button>
-                  <Button variant="soft" onClick={handleExportTxt} className="gap-2" data-testid="button-export-txt">
-                    <FileDown className="h-4 w-4" />
-                    Скачать TXT
-                  </Button>
+              <>
+                <SectionCard title="Текст резюме">
+                  <div className="whitespace-pre-wrap text-sm" data-testid="text-resume-content">{resumeText}</div>
+                </SectionCard>
+
+                {state.resumeState.resumeMode === "ats" && (
+                  <SectionCard title="Ключевые слова ATS">
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 dark:bg-emerald-950">
+                        <span className="mt-0.5 text-emerald-600">✓</span>
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Включены в резюме:</p>
+                          <p className="text-sm text-emerald-600 dark:text-emerald-400">{atsReport.included.join(", ")}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 dark:bg-amber-950">
+                        <span className="mt-0.5 text-amber-600">!</span>
+                        <div>
+                          <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Рекомендуем добавить:</p>
+                          <p className="text-sm text-amber-600 dark:text-amber-400">{atsReport.missing.join(", ")}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </SectionCard>
+                )}
+
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold">Скачать резюме:</p>
+                  <p className="text-xs text-muted-foreground">Выберите удобный формат. Файл сохранится на ваше устройство.</p>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <Button variant="soft" onClick={handleExportPdf} className="gap-2" data-testid="button-export-pdf">
+                      <FileText className="h-4 w-4" />
+                      Скачать PDF
+                    </Button>
+                    <Button variant="soft" onClick={handleExportDocx} className="gap-2" data-testid="button-export-docx">
+                      <FileDown className="h-4 w-4" />
+                      Скачать DOCX
+                    </Button>
+                    <Button variant="soft" onClick={handleExportTxt} className="gap-2" data-testid="button-export-txt">
+                      <FileDown className="h-4 w-4" />
+                      Скачать TXT
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center gap-2 rounded-card border border-border bg-card p-4 text-sm text-muted-foreground">
-                <Lock className="h-4 w-4 shrink-0" />
-                Скачивание резюме доступно после оплаты
-              </div>
+              <>
+                <SectionCard title="Предпросмотр резюме">
+                  <div className="flex items-center gap-2 mb-3 text-sm text-emerald-700 dark:text-emerald-400">
+                    <Gift className="h-4 w-4 shrink-0" />
+                    <span className="font-medium">Бесплатно — начало вашего резюме</span>
+                  </div>
+                  <Paywall previewLabel="Полный текст и скачивание — в полной версии">
+                    <div className="whitespace-pre-wrap text-sm" data-testid="text-resume-content">{resumeText}</div>
+                  </Paywall>
+                </SectionCard>
+
+                <PaywallUpgradeCard feature="Полное резюме и скачивание" />
+              </>
             )}
           </TabsContent>
 
+          {/* ── JOBS TAB ── */}
           <TabsContent value="jobs" className="space-y-4">
             {hasPaid && (
               <div className="space-y-3">
@@ -255,7 +270,7 @@ const Results = () => {
                         <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Расплывчатые описания без конкретных задач</li>
                       </ul>
                       <p className="rounded-lg bg-amber-50 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                        Проверка автоматическая и не гарантирует 100% точности. Всегда изучайте вакансию самостоятельно перед откликом: проверьте сайт компании, почитайте отзывы, не переводите деньги работодателю.
+                        Проверка автоматическая и не гарантирует 100% точности. Всегда изучайте вакансию самостоятельно перед откликом.
                       </p>
                     </div>
                   ) : (
@@ -287,7 +302,7 @@ const Results = () => {
                     <>
                       <p className="font-semibold">Для поиска вакансий нужно пройти квиз</p>
                       <p className="text-sm text-muted-foreground">Вернитесь в квиз и выберите целевые должности на шаге 2. После этого вакансии загрузятся автоматически.</p>
-                      <Button variant="hero" onClick={() => window.location.href = "/quiz"} className="mt-2" data-testid="button-go-quiz">
+                      <Button variant="hero" onClick={() => navigate("/quiz")} className="mt-2" data-testid="button-go-quiz">
                         Перейти к квизу
                       </Button>
                     </>
@@ -303,21 +318,32 @@ const Results = () => {
             ) : hasPaid ? (
               <JobSwiper />
             ) : (
-              <div className="space-y-3">
-                <div className="rounded-card border border-primary/20 bg-primary/5 p-3 text-center">
-                  <p className="text-sm font-semibold">
-                    Найдено вакансий: <span className="text-primary text-lg">{state.jobsState.jobs.length}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">Показаны {FREE_PREVIEW_JOBS} из {state.jobsState.jobs.length}. Оплатите доступ, чтобы увидеть все.</p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                  <Gift className="h-4 w-4 shrink-0" />
+                  <span className="font-medium">
+                    Бесплатно — {FREE_PREVIEW_JOBS} вакансии из {state.jobsState.jobs.length} найденных
+                  </span>
                 </div>
+
                 {state.jobsState.jobs.slice(0, FREE_PREVIEW_JOBS).map((job) => (
                   <JobCard key={job.id} job={job} showScoring={state.jobsState.showScoring} />
                 ))}
-                <PaywallBlock feature="Все вакансии" />
+
+                {state.jobsState.jobs.length > FREE_PREVIEW_JOBS && (
+                  <div className="rounded-card border border-dashed border-muted-foreground/30 bg-muted/30 p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Ещё <span className="font-semibold text-foreground">{state.jobsState.jobs.length - FREE_PREVIEW_JOBS}</span> вакансий доступны в полной версии
+                    </p>
+                  </div>
+                )}
+
+                <PaywallUpgradeCard feature="Все вакансии и фильтры" />
               </div>
             )}
           </TabsContent>
 
+          {/* ── EXPORT TAB ── */}
           <TabsContent value="more" className="space-y-4">
             {hasPaid && <ResultsArchive />}
 
@@ -346,7 +372,7 @@ const Results = () => {
                 </div>
               </SectionCard>
             ) : (
-              <PaywallBlock feature="Экспорт и архив" />
+              <PaywallUpgradeCard feature="Экспорт и архив" />
             )}
 
             <SectionCard title="Как пользоваться приложением">
