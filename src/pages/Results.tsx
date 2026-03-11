@@ -7,15 +7,21 @@ import { SectionCard } from "@/components/SectionCard";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHrxState } from "@/context/hrx-state";
+import { useAuth } from "@/context/auth-context";
 import { buildAtsKeywordReport, buildResumeText } from "@/data/mockResumeHelpers";
 import { searchAllVacancies } from "@/services/jobApi";
 import { downloadPdf, downloadDocx, downloadTxt, exportJobsCsv } from "@/services/exportResume";
 import { ResultsArchive } from "@/components/ResultsArchive";
-import { Loader2, RefreshCw, AlertCircle, FileText, FileDown, FileSpreadsheet, Info, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Paywall, PaywallBlock } from "@/components/Paywall";
+import { JobCard } from "@/components/JobCard";
+import { Loader2, RefreshCw, AlertCircle, FileText, FileDown, FileSpreadsheet, Info, ShieldCheck, ArrowLeft, Lock } from "lucide-react";
+
+const FREE_PREVIEW_JOBS = 3;
 
 const Results = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useHrxState();
+  const { hasPaid } = useAuth();
   const atsReport = buildAtsKeywordReport(state.quizState);
   const resumeText = buildResumeText(state.quizState, state.resumeState.resumeMode);
 
@@ -131,11 +137,13 @@ const Results = () => {
               </div>
             </div>
 
-            <SectionCard title="Текст резюме">
-              <div className="whitespace-pre-wrap text-sm" data-testid="text-resume-content">{resumeText}</div>
-            </SectionCard>
+            <Paywall feature="Полное резюме">
+              <SectionCard title="Текст резюме">
+                <div className="whitespace-pre-wrap text-sm" data-testid="text-resume-content">{resumeText}</div>
+              </SectionCard>
+            </Paywall>
 
-            {state.resumeState.resumeMode === "ats" && (
+            {hasPaid && state.resumeState.resumeMode === "ats" && (
               <SectionCard title="Ключевые слова ATS">
                 <div className="space-y-2">
                   <div className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 dark:bg-emerald-950">
@@ -156,99 +164,108 @@ const Results = () => {
               </SectionCard>
             )}
 
-            <div className="space-y-2">
-              <p className="text-sm font-semibold">Скачать резюме:</p>
-              <p className="text-xs text-muted-foreground">Выберите удобный формат. Файл сохранится на ваше устройство.</p>
-              <div className="grid gap-2 md:grid-cols-3">
-                <Button variant="soft" onClick={handleExportPdf} className="gap-2" data-testid="button-export-pdf">
-                  <FileText className="h-4 w-4" />
-                  Скачать PDF
-                </Button>
-                <Button variant="soft" onClick={handleExportDocx} className="gap-2" data-testid="button-export-docx">
-                  <FileDown className="h-4 w-4" />
-                  Скачать DOCX
-                </Button>
-                <Button variant="soft" onClick={handleExportTxt} className="gap-2" data-testid="button-export-txt">
-                  <FileDown className="h-4 w-4" />
-                  Скачать TXT
-                </Button>
+            {hasPaid ? (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold">Скачать резюме:</p>
+                <p className="text-xs text-muted-foreground">Выберите удобный формат. Файл сохранится на ваше устройство.</p>
+                <div className="grid gap-2 md:grid-cols-3">
+                  <Button variant="soft" onClick={handleExportPdf} className="gap-2" data-testid="button-export-pdf">
+                    <FileText className="h-4 w-4" />
+                    Скачать PDF
+                  </Button>
+                  <Button variant="soft" onClick={handleExportDocx} className="gap-2" data-testid="button-export-docx">
+                    <FileDown className="h-4 w-4" />
+                    Скачать DOCX
+                  </Button>
+                  <Button variant="soft" onClick={handleExportTxt} className="gap-2" data-testid="button-export-txt">
+                    <FileDown className="h-4 w-4" />
+                    Скачать TXT
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-card border border-border bg-card p-4 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 shrink-0" />
+                Скачивание резюме доступно после оплаты
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="jobs" className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <label className="flex min-h-[56px] flex-1 items-center justify-between rounded-card border border-border bg-card px-4">
-                  <span className="font-semibold">Скрыть не рекомендованные</span>
-                  <Switch
-                    checked={state.jobsState.hideNotRecommended}
-                    onCheckedChange={() => dispatch({ type: "TOGGLE_HIDE_NOT_RECOMMENDED" })}
-                    data-testid="switch-hide-not-recommended"
-                  />
-                </label>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-[56px] w-[56px] shrink-0"
-                  onClick={loadJobs}
-                  disabled={state.jobsState.isLoading}
-                  data-testid="button-refresh-jobs"
-                >
-                  <RefreshCw className={`h-5 w-5 ${state.jobsState.isLoading ? "animate-spin" : ""}`} />
-                </Button>
-              </div>
+            {hasPaid && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <label className="flex min-h-[56px] flex-1 items-center justify-between rounded-card border border-border bg-card px-4">
+                    <span className="font-semibold">Скрыть не рекомендованные</span>
+                    <Switch
+                      checked={state.jobsState.hideNotRecommended}
+                      onCheckedChange={() => dispatch({ type: "TOGGLE_HIDE_NOT_RECOMMENDED" })}
+                      data-testid="switch-hide-not-recommended"
+                    />
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-[56px] w-[56px] shrink-0"
+                    onClick={loadJobs}
+                    disabled={state.jobsState.isLoading}
+                    data-testid="button-refresh-jobs"
+                  >
+                    <RefreshCw className={`h-5 w-5 ${state.jobsState.isLoading ? "animate-spin" : ""}`} />
+                  </Button>
+                </div>
 
-              <label className="flex min-h-[56px] items-center justify-between rounded-card border border-border bg-card px-4">
-                <span className="font-semibold">Дата публикации</span>
-                <select
-                  value={state.jobsState.dateFilter}
-                  onChange={(e) => dispatch({ type: "SET_DATE_FILTER", payload: e.target.value as "all" | "3" | "7" | "30" })}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  data-testid="select-date-filter"
-                >
-                  <option value="all">Все</option>
-                  <option value="3">Последние 3 дня</option>
-                  <option value="7">Последние 7 дней</option>
-                  <option value="30">Последние 30 дней</option>
-                </select>
-              </label>
-
-              <div className="rounded-card border border-border bg-card p-4 space-y-3">
-                <label className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span className="font-semibold">Проверка надёжности компаний</span>
-                  </div>
-                  <Switch
-                    checked={state.jobsState.showScoring}
-                    onCheckedChange={() => dispatch({ type: "TOGGLE_SHOW_SCORING" })}
-                    data-testid="switch-show-scoring"
-                  />
+                <label className="flex min-h-[56px] items-center justify-between rounded-card border border-border bg-card px-4">
+                  <span className="font-semibold">Дата публикации</span>
+                  <select
+                    value={state.jobsState.dateFilter}
+                    onChange={(e) => dispatch({ type: "SET_DATE_FILTER", payload: e.target.value as "all" | "3" | "7" | "30" })}
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    data-testid="select-date-filter"
+                  >
+                    <option value="all">Все</option>
+                    <option value="3">Последние 3 дня</option>
+                    <option value="7">Последние 7 дней</option>
+                    <option value="30">Последние 30 дней</option>
+                  </select>
                 </label>
 
-                {state.jobsState.showScoring ? (
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>Каждая компания получает оценку от 0 до 100 баллов. Мы проверяем:</p>
-                    <ul className="space-y-1 pl-1">
-                      <li className="flex items-start gap-2"><span className="text-emerald-600 shrink-0">+</span> Верификация на hh.ru (компания подтверждена площадкой)</li>
-                      <li className="flex items-start gap-2"><span className="text-emerald-600 shrink-0">+</span> Наличие логотипа и полного профиля</li>
-                      <li className="flex items-start gap-2"><span className="text-emerald-600 shrink-0">+</span> Адекватный уровень зарплаты для должности</li>
-                      <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Подозрительно высокие зарплаты без требований</li>
-                      <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Признаки сетевого маркетинга или финансовых пирамид</li>
-                      <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Расплывчатые описания без конкретных задач</li>
-                    </ul>
-                    <p className="rounded-lg bg-amber-50 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                      Проверка автоматическая и не гарантирует 100% точности. Всегда изучайте вакансию самостоятельно перед откликом: проверьте сайт компании, почитайте отзывы, не переводите деньги работодателю.
+                <div className="rounded-card border border-border bg-card p-4 space-y-3">
+                  <label className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                      <span className="font-semibold">Проверка надёжности компаний</span>
+                    </div>
+                    <Switch
+                      checked={state.jobsState.showScoring}
+                      onCheckedChange={() => dispatch({ type: "TOGGLE_SHOW_SCORING" })}
+                      data-testid="switch-show-scoring"
+                    />
+                  </label>
+
+                  {state.jobsState.showScoring ? (
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>Каждая компания получает оценку от 0 до 100 баллов. Мы проверяем:</p>
+                      <ul className="space-y-1 pl-1">
+                        <li className="flex items-start gap-2"><span className="text-emerald-600 shrink-0">+</span> Верификация на hh.ru (компания подтверждена площадкой)</li>
+                        <li className="flex items-start gap-2"><span className="text-emerald-600 shrink-0">+</span> Наличие логотипа и полного профиля</li>
+                        <li className="flex items-start gap-2"><span className="text-emerald-600 shrink-0">+</span> Адекватный уровень зарплаты для должности</li>
+                        <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Подозрительно высокие зарплаты без требований</li>
+                        <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Признаки сетевого маркетинга или финансовых пирамид</li>
+                        <li className="flex items-start gap-2"><span className="text-amber-600 shrink-0">!</span> Расплывчатые описания без конкретных задач</li>
+                      </ul>
+                      <p className="rounded-lg bg-amber-50 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                        Проверка автоматическая и не гарантирует 100% точности. Всегда изучайте вакансию самостоятельно перед откликом: проверьте сайт компании, почитайте отзывы, не переводите деньги работодателю.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Включите, чтобы видеть оценку надёжности каждой компании и предупреждения о возможных рисках.
                     </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Включите, чтобы видеть оценку надёжности каждой компании и предупреждения о возможных рисках.
-                  </p>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {state.jobsState.isLoading ? (
               <div className="flex flex-col items-center justify-center gap-3 py-12" data-testid="status-jobs-loading">
@@ -283,37 +300,54 @@ const Results = () => {
                   )}
                 </div>
               </div>
-            ) : (
+            ) : hasPaid ? (
               <JobSwiper />
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-card border border-primary/20 bg-primary/5 p-3 text-center">
+                  <p className="text-sm font-semibold">
+                    Найдено вакансий: <span className="text-primary text-lg">{state.jobsState.jobs.length}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">Показаны {FREE_PREVIEW_JOBS} из {state.jobsState.jobs.length}. Оплатите доступ, чтобы увидеть все.</p>
+                </div>
+                {state.jobsState.jobs.slice(0, FREE_PREVIEW_JOBS).map((job) => (
+                  <JobCard key={job.id} job={job} showScoring={state.jobsState.showScoring} />
+                ))}
+                <PaywallBlock feature="Все вакансии" />
+              </div>
             )}
           </TabsContent>
 
           <TabsContent value="more" className="space-y-4">
-            <ResultsArchive />
+            {hasPaid && <ResultsArchive />}
 
-            <SectionCard title="Экспорт данных">
-              <p className="text-sm text-muted-foreground mb-3">Скачайте ваш профиль или список вакансий на устройство.</p>
-              <div className="grid gap-2 md:grid-cols-2">
-                <Button variant="soft" onClick={handleExportProfile} className="gap-2" data-testid="button-export-profile">
-                  <FileText className="h-4 w-4" />
-                  Скачать профиль
-                </Button>
-                <Button
-                  variant="soft"
-                  onClick={handleExportVacancies}
-                  disabled={!hasJobs}
-                  className="gap-2"
-                  data-testid="button-export-vacancies"
-                >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  {hasJobs
-                    ? savedJobs.length > 0
-                      ? `Скачать сохранённые (${savedJobs.length})`
-                      : `Скачать все вакансии (${state.jobsState.jobs.length})`
-                    : "Сначала найдите вакансии"}
-                </Button>
-              </div>
-            </SectionCard>
+            {hasPaid ? (
+              <SectionCard title="Экспорт данных">
+                <p className="text-sm text-muted-foreground mb-3">Скачайте ваш профиль или список вакансий на устройство.</p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <Button variant="soft" onClick={handleExportProfile} className="gap-2" data-testid="button-export-profile">
+                    <FileText className="h-4 w-4" />
+                    Скачать профиль
+                  </Button>
+                  <Button
+                    variant="soft"
+                    onClick={handleExportVacancies}
+                    disabled={!hasJobs}
+                    className="gap-2"
+                    data-testid="button-export-vacancies"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    {hasJobs
+                      ? savedJobs.length > 0
+                        ? `Скачать сохранённые (${savedJobs.length})`
+                        : `Скачать все вакансии (${state.jobsState.jobs.length})`
+                      : "Сначала найдите вакансии"}
+                  </Button>
+                </div>
+              </SectionCard>
+            ) : (
+              <PaywallBlock feature="Экспорт и архив" />
+            )}
 
             <SectionCard title="Как пользоваться приложением">
               <div className="space-y-3 text-sm text-muted-foreground">

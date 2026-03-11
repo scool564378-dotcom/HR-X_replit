@@ -55,8 +55,13 @@ async function initDb() {
       id SERIAL PRIMARY KEY,
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      has_paid BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW() NOT NULL
     )
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS has_paid BOOLEAN NOT NULL DEFAULT false
   `);
 
   await db.execute(sql`

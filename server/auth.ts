@@ -54,7 +54,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
       }
       req.session.userId = user.id;
       req.session.save(() => {
-        res.json({ id: user.id, email: user.email });
+        res.json({ id: user.id, email: user.email, hasPaid: user.hasPaid });
       });
     });
   } catch (err) {
@@ -91,7 +91,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
       }
       req.session.userId = user.id;
       req.session.save(() => {
-        res.json({ id: user.id, email: user.email });
+        res.json({ id: user.id, email: user.email, hasPaid: user.hasPaid });
       });
     });
   } catch (err) {
@@ -122,7 +122,7 @@ authRouter.get("/me", async (req: Request, res: Response) => {
       res.json(null);
       return;
     }
-    res.json({ id: user.id, email: user.email });
+    res.json({ id: user.id, email: user.email, hasPaid: user.hasPaid });
   } catch (err) {
     console.error("Me error:", err);
     res.json(null);

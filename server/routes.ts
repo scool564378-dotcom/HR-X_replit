@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { requireAuth } from "./auth.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
-import { promoCodes } from "../shared/schema.js";
+import { promoCodes, users } from "../shared/schema.js";
 import { eq, and, gt, sql } from "drizzle-orm";
 import { addLog } from "./admin.js";
 
@@ -159,6 +159,11 @@ apiRouter.post("/promo/validate", requireAuth, async (req: Request, res: Respons
     }
 
     const promo = result.rows[0] as { id: number; code: string; type: string; value: number };
+
+    if (promo.type === "free_access" && req.session.userId) {
+      await db.update(users).set({ hasPaid: true }).where(eq(users.id, req.session.userId));
+    }
+
     addLog("promo", "redeemed", { code: promo.code, userId: req.session.userId, type: promo.type, value: promo.value }, req.ip, req.session.userId);
 
     res.json({ type: promo.type, value: promo.value, code: promo.code });

@@ -4,6 +4,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  hasPaid: boolean("has_paid").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

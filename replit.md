@@ -142,6 +142,18 @@ Features:
 - **API keys**: view masked keys (OPENAI_API_KEY, YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY), update values. Keys stored in app_settings table + applied to process.env at runtime
 - **Promo validation endpoint**: POST `/api/promo/validate` — validates and redeems promo codes (auth-gated)
 
+## Paywall / Access Control
+
+Price: 300 ₽ (payment not yet connected, testing via promo codes).
+
+- `users.has_paid` boolean — controls access to paid features
+- `src/components/Paywall.tsx` — Paywall component (gradient mask + promo code input) and PaywallBlock (standalone block)
+- `useAuth().hasPaid` — frontend access check
+- Free users see: quiz (full), 3 job previews (count shown), resume preview (first 3-4 lines with gradient fade)
+- Paid users see: full job list with swiper/filters, full resume + export (PDF/DOCX/TXT), presets and archive
+- Promo code `free_access` type grants `has_paid = true` on redemption
+- Promo validation: POST `/api/promo/validate` — atomic redemption with race-condition protection
+
 ## User Features (Auth-Gated)
 
 - **Quiz Presets**: Save/load/delete named quiz configurations. PresetManager component on Quiz step 6.
