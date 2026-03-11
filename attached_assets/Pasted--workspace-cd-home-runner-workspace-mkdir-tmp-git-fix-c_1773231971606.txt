@@ -1,0 +1,172 @@
+~/workspace$ cd /home/runner/workspace
+mkdir /tmp/git-fix
+cp -r .git/refs /tmp/git-fix/refs
+cp .git/HEAD /tmp/git-fix/HEAD
+cp .git/config /tmp/git-fix/config
+rm -rf .git
+git init
+cp /tmp/git-fix/config .git/config
+git add -A
+git commit -m "Initial push: HR-X project"
+git branch -M main
+git push -u origin main --force
+Initialized empty Git repository in /home/runner/workspace/.git/
+[main (root-commit) 5af5918] Initial push: HR-X project
+ 146 files changed, 24768 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 .replit
+ create mode 100644 README.md
+ create mode 100644 attached_assets/HR-X_Quiz_Expanded_v3_1773216030354.md
+ create mode 100644 attached_assets/Pasted--FULL-SCHEMA-RLS-IND-1773071772987_1773071772988.txt
+ create mode 100644 attached_assets/Pasted--FULL-SCHEMA-RLS-IND-1773071816440_1773071816440.txt
+ create mode 100644 attached_assets/Pasted--HR-X-HR-X-Quiz-Expanded-v3-change--1773216022428_1773216022429.txt
+ create mode 100644 attached_assets/image_1773072756960.png
+ create mode 100644 attached_assets/image_1773072945534.png
+ create mode 100644 attached_assets/image_1773183547317.png
+ create mode 100644 attached_assets/image_1773183701103.png
+ create mode 100644 attached_assets/image_1773184060683.png
+ create mode 100644 attached_assets/image_1773184082441.png
+ create mode 100644 attached_assets/image_1773184106120.png
+ create mode 100644 attached_assets/image_1773185063231.png
+ create mode 100644 attached_assets/image_1773185729848.png
+ create mode 100644 attached_assets/image_1773186232008.png
+ create mode 100644 attached_assets/image_1773186250247.png
+ create mode 100644 attached_assets/image_1773218410020.png
+ create mode 100644 attached_assets/image_1773220076240.png
+ create mode 100644 bun.lock
+ create mode 100644 components.json
+ create mode 100644 eslint.config.js
+ create mode 100644 index.html
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 postcss.config.js
+ create mode 100644 public/favicon.ico
+ create mode 100644 public/placeholder.svg
+ create mode 100644 public/robots.txt
+ create mode 100644 replit.md
+ create mode 100644 server/admin.ts
+ create mode 100644 server/auth.ts
+ create mode 100644 server/db.ts
+ create mode 100644 server/index.ts
+ create mode 100644 server/routes.ts
+ create mode 100644 server/storage.ts
+ create mode 100644 server/tsconfig.json
+ create mode 100644 shared/schema.ts
+ create mode 100644 src/App.css
+ create mode 100644 src/App.tsx
+ create mode 100644 src/components/ApiKeyModal.tsx
+ create mode 100644 src/components/AssistantHelpModal.tsx
+ create mode 100644 src/components/CompanyScoreBadge.tsx
+ create mode 100644 src/components/JobCard.tsx
+ create mode 100644 src/components/JobSwiper.tsx
+ create mode 100644 src/components/NavLink.tsx
+ create mode 100644 src/components/OptionCard.tsx
+ create mode 100644 src/components/PresetManager.tsx
+ create mode 100644 src/components/ProgressBar.tsx
+ create mode 100644 src/components/RegionPickerModal.tsx
+ create mode 100644 src/components/ResultsArchive.tsx
+ create mode 100644 src/components/ResumePreviewCard.tsx
+ create mode 100644 src/components/SectionCard.tsx
+ create mode 100644 src/components/StatusBadge.tsx
+ create mode 100644 src/components/StepHeader.tsx
+ create mode 100644 src/components/StickyQuizNav.tsx
+ create mode 100644 src/components/SwipeJobCard.tsx
+ create mode 100644 src/components/ThemeToggle.tsx
+ create mode 100644 src/components/layout/AppLayout.tsx
+ create mode 100644 src/components/ui/accordion.tsx
+ create mode 100644 src/components/ui/alert-dialog.tsx
+ create mode 100644 src/components/ui/alert.tsx
+ create mode 100644 src/components/ui/aspect-ratio.tsx
+ create mode 100644 src/components/ui/avatar.tsx
+ create mode 100644 src/components/ui/badge.tsx
+ create mode 100644 src/components/ui/breadcrumb.tsx
+ create mode 100644 src/components/ui/button.tsx
+ create mode 100644 src/components/ui/calendar.tsx
+ create mode 100644 src/components/ui/card.tsx
+ create mode 100644 src/components/ui/carousel.tsx
+ create mode 100644 src/components/ui/chart.tsx
+ create mode 100644 src/components/ui/checkbox.tsx
+ create mode 100644 src/components/ui/collapsible.tsx
+ create mode 100644 src/components/ui/command.tsx
+ create mode 100644 src/components/ui/context-menu.tsx
+ create mode 100644 src/components/ui/dialog.tsx
+ create mode 100644 src/components/ui/drawer.tsx
+ create mode 100644 src/components/ui/dropdown-menu.tsx
+ create mode 100644 src/components/ui/form.tsx
+ create mode 100644 src/components/ui/hover-card.tsx
+ create mode 100644 src/components/ui/input-otp.tsx
+ create mode 100644 src/components/ui/input.tsx
+ create mode 100644 src/components/ui/label.tsx
+ create mode 100644 src/components/ui/menubar.tsx
+ create mode 100644 src/components/ui/navigation-menu.tsx
+ create mode 100644 src/components/ui/pagination.tsx
+ create mode 100644 src/components/ui/popover.tsx
+ create mode 100644 src/components/ui/progress.tsx
+ create mode 100644 src/components/ui/radio-group.tsx
+ create mode 100644 src/components/ui/resizable.tsx
+ create mode 100644 src/components/ui/scroll-area.tsx
+ create mode 100644 src/components/ui/select.tsx
+ create mode 100644 src/components/ui/separator.tsx
+ create mode 100644 src/components/ui/sheet.tsx
+ create mode 100644 src/components/ui/sidebar.tsx
+ create mode 100644 src/components/ui/skeleton.tsx
+ create mode 100644 src/components/ui/slider.tsx
+ create mode 100644 src/components/ui/sonner.tsx
+ create mode 100644 src/components/ui/switch.tsx
+ create mode 100644 src/components/ui/table.tsx
+ create mode 100644 src/components/ui/tabs.tsx
+ create mode 100644 src/components/ui/textarea.tsx
+ create mode 100644 src/components/ui/toast.tsx
+ create mode 100644 src/components/ui/toaster.tsx
+ create mode 100644 src/components/ui/toggle-group.tsx
+ create mode 100644 src/components/ui/toggle.tsx
+ create mode 100644 src/components/ui/tooltip.tsx
+ create mode 100644 src/components/ui/use-toast.ts
+ create mode 100644 src/context/auth-context.tsx
+ create mode 100644 src/context/hrx-state.tsx
+ create mode 100644 src/data/mockJobs.ts
+ create mode 100644 src/data/mockResumeHelpers.ts
+ create mode 100644 src/data/quizData.ts
+ create mode 100644 src/data/regions.ts
+ create mode 100644 src/hooks/use-mobile.tsx
+ create mode 100644 src/hooks/use-toast.ts
+ create mode 100644 src/index.css
+ create mode 100644 src/integrations/supabase/client.ts
+ create mode 100644 src/integrations/supabase/types.ts
+ create mode 100644 src/lib/utils.ts
+ create mode 100644 src/main.tsx
+ create mode 100644 src/pages/AdaptResult.tsx
+ create mode 100644 src/pages/Admin.tsx
+ create mode 100644 src/pages/Auth.tsx
+ create mode 100644 src/pages/Index.tsx
+ create mode 100644 src/pages/NotFound.tsx
+ create mode 100644 src/pages/Profile.tsx
+ create mode 100644 src/pages/Quiz.tsx
+ create mode 100644 src/pages/Results.tsx
+ create mode 100644 src/services/companyScoring.ts
+ create mode 100644 src/services/exportResume.ts
+ create mode 100644 src/services/jobApi.ts
+ create mode 100644 src/services/regionMapping.ts
+ create mode 100644 src/test/example.test.ts
+ create mode 100644 src/test/setup.ts
+ create mode 100644 src/types/hrx.ts
+ create mode 100644 src/vite-env.d.ts
+ create mode 100644 supabase/config.toml
+ create mode 100644 tailwind.config.ts
+ create mode 100644 tsconfig.app.json
+ create mode 100644 tsconfig.json
+ create mode 100644 tsconfig.node.json
+ create mode 100644 vite.config.ts
+ create mode 100644 vite.config.ts.timestamp-1773216694226-840188557b62.mjs
+ create mode 100644 vitest.config.ts
+Enumerating objects: 167, done.
+Counting objects: 100% (167/167), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (159/159), done.
+Writing objects: 100% (167/167), 926.87 KiB | 25.75 MiB/s, done.
+Total 167 (delta 5), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (5/5), done.
+To https://github.com/scool564378-dotcom/HR-X_replit.git
+ * [new branch]      main -> main
+branch 'main' set up to track 'origin/main'.
+~/workspace$ 
