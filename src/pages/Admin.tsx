@@ -382,7 +382,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground">Значение</label>
-                    <Input type="number" value={newPromo.value} onChange={e => setNewPromo(p => ({ ...p, value: e.target.value }))} data-testid="input-promo-value" />
+                    <Input type="number" value={newPromo.type === "free_access" ? "0" : newPromo.value} onChange={e => setNewPromo(p => ({ ...p, value: e.target.value }))} disabled={newPromo.type === "free_access"} data-testid="input-promo-value" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground">Макс. использований (0 = без лимита)</label>
