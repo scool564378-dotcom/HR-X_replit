@@ -13,6 +13,8 @@ import Results from "./pages/Results";
 import AdaptResult from "./pages/AdaptResult";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Readiness from "./pages/Readiness";
+import Guides from "./pages/Guides";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,9 @@ const App = () => (
               <Route path="/results" element={<Results />} />
               <Route path="/results/adapt/:id" element={<AdaptResult />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/readiness" element={<Readiness />} />
+              <Route path="/guides" element={<Guides />} />
+              <Route path="/guides/:guideId" element={<Guides />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </HrxStateProvider>

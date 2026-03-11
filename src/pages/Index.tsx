@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { FileText, Search, Shield, Clock, Users } from "lucide-react";
+import { FileText, Search, Shield, Clock, Users, ClipboardCheck, BookOpen } from "lucide-react";
 
 const benefits = [
   {
@@ -77,6 +77,37 @@ const Index = () => {
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground" data-testid="text-social-proof">
           <Users className="h-4 w-4" />
           <span>Более 2 000 человек уже составили резюме с HR-X</span>
+        </div>
+
+        <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary/30 via-primary/60 to-primary/30" />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            onClick={() => navigate("/readiness")}
+            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm"
+            data-testid="link-readiness"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Чек-лист готовности</p>
+              <p className="text-xs text-muted-foreground">Проверьте свою готовность к удалёнке</p>
+            </div>
+          </button>
+          <button
+            onClick={() => navigate("/guides")}
+            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm"
+            data-testid="link-guides"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Полезные гайды</p>
+              <p className="text-xs text-muted-foreground">Советы по резюме и собеседованиям</p>
+            </div>
+          </button>
         </div>
       </section>
     </AppLayout>

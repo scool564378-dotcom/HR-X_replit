@@ -14,10 +14,10 @@ A React/Vite SPA that helps users build a resume and find relevant job listings 
 
 ## Project Structure
 
-- `src/pages/` — Route-level pages (Index, Quiz, Profile, Results, AdaptResult)
+- `src/pages/` — Route-level pages (Index, Quiz, Profile, Results, AdaptResult, Readiness, Guides)
 - `src/components/` — Reusable UI components + shadcn/ui primitives in `ui/`
 - `src/context/hrx-state.tsx` — Global app state (quiz answers, jobs, theme, etc.)
-- `src/data/` — Quiz options, resume helpers, regions
+- `src/data/` — Quiz options, resume helpers, regions, readiness checklist, guides content
   - `quizData.ts` — All quiz data: role groups with hh.ru IDs + search keywords, activities (grouped), software skills (grouped), professional skills (grouped), schedule/employment/salary/restriction options with API mappings
   - `regions.ts` — Region catalog sorted alphabetically
   - `mockResumeHelpers.ts` — Resume text builder from quiz state
@@ -153,6 +153,23 @@ Price: 300 ₽ (payment not yet connected, testing via promo codes).
 - Paid users see: full job list with swiper/filters, full resume + export (PDF/DOCX/TXT), presets and archive
 - Promo code `free_access` type grants `has_paid = true` on redemption
 - Promo validation: POST `/api/promo/validate` — atomic redemption with race-condition protection
+
+## Free Content Pages
+
+### Readiness Checklist (`/readiness`)
+- 10-question quiz to assess readiness for remote work
+- Answers: Yes / Partially / No (scored 10/5/0 points each)
+- Result tiers: 80-100% (good), 50-79% (needs improvement), 0-49% (needs preparation)
+- Personalized recommendations for weak areas
+- Data: `src/data/readinessData.ts`, Page: `src/pages/Readiness.tsx`
+- CTAs: link to main quiz, guides, restart
+
+### Mini-Guides (`/guides`)
+- 6 practical guides for remote work audience (40-65 years)
+- Topics: cover letter, video interview, resume mistakes, scam protection, first day, remote professions
+- Each guide has intro, structured sections, conclusion, and CTA
+- Data: `src/data/guidesData.ts`, Page: `src/pages/Guides.tsx`
+- Navigation: accessible from main page, readiness results, and cross-linked between guides
 
 ## User Features (Auth-Gated)
 
