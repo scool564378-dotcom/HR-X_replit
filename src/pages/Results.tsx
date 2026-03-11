@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,18 @@ import { downloadPdf, downloadDocx, downloadTxt, exportJobsCsv } from "@/service
 import { ResultsArchive } from "@/components/ResultsArchive";
 import { Paywall, PaywallUpgradeCard, FreeContentBanner } from "@/components/Paywall";
 import { JobCard } from "@/components/JobCard";
-import { Loader2, RefreshCw, AlertCircle, FileText, FileDown, FileSpreadsheet, Info, ShieldCheck, ArrowLeft, Gift } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle, FileText, FileDown, FileSpreadsheet, Info, ShieldCheck, ArrowLeft, Gift, Clock } from "lucide-react";
 
 const FREE_PREVIEW_JOBS = 3;
+
+function formatCacheAge(cachedAt: string): string {
+  const diff = Date.now() - new Date(cachedAt).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "только что";
+  if (minutes < 60) return `${minutes} мин. назад`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} ч. назад`;
+}
 
 const Results = () => {
   const navigate = useNavigate();
@@ -24,16 +33,20 @@ const Results = () => {
   const { hasPaid } = useAuth();
   const atsReport = buildAtsKeywordReport(state.quizState);
   const resumeText = buildResumeText(state.quizState, state.resumeState.resumeMode);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
 
-  const loadJobs = useCallback(async () => {
+  const loadJobs = useCallback(async (forceRefresh = false) => {
     if (state.quizState.targetRoles.length === 0) {
       dispatch({ type: "SET_JOBS_ERROR", payload: "Для поиска вакансий выберите целевые должности в квизе." });
       return;
     }
     dispatch({ type: "SET_JOBS_LOADING", payload: true });
     try {
-      const jobs = await searchAllVacancies(state.quizState);
-      dispatch({ type: "SET_JOBS", payload: jobs });
+      const result = await searchAllVacancies(state.quizState, forceRefresh);
+      dispatch({ type: "SET_JOBS", payload: result.jobs });
+      setCachedAt(result.cachedAt);
+      setFromCache(result.fromCache);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Не удалось загрузить вакансии. Попробуйте ещё раз.";
       dispatch({ type: "SET_JOBS_ERROR", payload: msg });
@@ -222,13 +235,35 @@ const Results = () => {
                     variant="outline"
                     size="icon"
                     className="h-[56px] w-[56px] shrink-0"
-                    onClick={loadJobs}
+                    onClick={() => loadJobs(true)}
                     disabled={state.jobsState.isLoading}
+                    title="Обновить вакансии (загрузить свежие данные)"
                     data-testid="button-refresh-jobs"
                   >
                     <RefreshCw className={`h-5 w-5 ${state.jobsState.isLoading ? "animate-spin" : ""}`} />
                   </Button>
                 </div>
+
+                {cachedAt && !state.jobsState.isLoading && (
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground" data-testid="text-cache-info">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    <span>
+                      {fromCache
+                        ? `Вакансии из кэша (найдены ${formatCacheAge(cachedAt)})`
+                        : `Вакансии загружены ${formatCacheAge(cachedAt)}`
+                      }
+                    </span>
+                    {fromCache && (
+                      <button
+                        className="ml-auto text-primary hover:underline font-medium"
+                        onClick={() => loadJobs(true)}
+                        data-testid="button-force-refresh"
+                      >
+                        Обновить
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <label className="flex min-h-[56px] items-center justify-between rounded-card border border-border bg-card px-4">
                   <span className="font-semibold">Дата публикации</span>

@@ -11,22 +11,6 @@ export default defineConfig({
       overlay: false,
     },
     proxy: {
-      "/api/hh": {
-        target: "https://api.hh.ru",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/hh/, ""),
-        configure: (proxy) => {
-          proxy.on("proxyReq", (proxyReq) => {
-            proxyReq.removeHeader("user-agent");
-            proxyReq.setHeader("User-Agent", "Mozilla/5.0 (compatible; HRXBot/1.0)");
-          });
-        },
-      },
-      "/api/trudvsem": {
-        target: "http://opendata.trudvsem.ru/api/v1",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/trudvsem/, ""),
-      },
       "/api/auth": {
         target: "http://localhost:3001",
         changeOrigin: true,
@@ -44,6 +28,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/api/promo": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+      "/api/vacancies": {
         target: "http://localhost:3001",
         changeOrigin: true,
       },

@@ -22,7 +22,7 @@ A React/Vite SPA that helps users build a resume and find relevant job listings 
   - `regions.ts` — Region catalog sorted alphabetically
   - `mockResumeHelpers.ts` — Resume text builder from quiz state
 - `src/services/` — API integration layer
-  - `jobApi.ts` — Unified vacancy search across hh.ru and trudvsem.ru with role-based search, NOT keywords, professional_role param
+  - `jobApi.ts` — Frontend vacancy search client: builds search params from QuizState, calls backend `/api/vacancies/search`, applies scoring/filtering/normalization client-side
   - `regionMapping.ts` — Maps app region IDs to hh.ru area IDs and trudvsem region codes
   - `companyScoring.ts` — Company reliability scoring system
   - `exportResume.ts` — PDF/DOCX/TXT/CSV export
@@ -54,7 +54,18 @@ Vacancies are fetched in real-time from two public APIs:
    - `work_schedule_by_days` — 5/2, 2/2, flexible, weekend
 2. **trudvsem.ru (Работа России)** — `GET /vacancies` or `/vacancies/region/{code}` with `text` param + client-side remote filtering
 
-Both APIs are proxied through Vite dev server (`/api/hh/*` → `api.hh.ru`, `/api/trudvsem/*` → `opendata.trudvsem.ru/api/v1`) to avoid CORS issues. The hh.ru proxy sets a browser-compatible User-Agent header.
+Architecture: Frontend sends search params to backend `POST /api/vacancies/search`. Backend fetches from hh.ru and trudvsem.ru APIs directly, caches raw results in `vacancy_cache` PostgreSQL table (TTL: 3 hours). Frontend applies scoring, remote filtering, exclusion filtering, and normalization client-side.
+
+Cache key: SHA-256 hash of normalized search params (searchText, roleIds, area, experience, salary, employment, schedules). Identical searches from different users hit the same cache entry.
+
+Cache behavior:
+- TTL: 3 hours — subsequent requests with same params return cached data instantly
+- Force refresh: `?refresh=true` query param bypasses cache and fetches fresh data
+- UI shows cache age ("Вакансии из кэша, найдены N мин. назад") with "Обновить" link
+
+Backend endpoint: `server/vacancyCache.ts` — handles API fetching with retry logic, pagination (up to 20 hh.ru pages), region fallback, and PostgreSQL caching. Stats endpoint: `GET /api/vacancies/cache-stats`.
+
+Vite proxies `/api/vacancies/*` to Express on port 3001.
 
 Strict remote-only filtering: hh.ru uses `schedule=remote` + post-filter by `schedule.id` and `work_format`; trudvsem.ru uses keyword search + schedule field matching.
 
@@ -116,6 +127,7 @@ Express server on port 3001 with PostgreSQL database:
 - `server/db.ts` — PostgreSQL connection pool + Drizzle ORM
 - `server/auth.ts` — Auth routes: POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me
 - `server/routes.ts` — CRUD API: GET/POST/DELETE /api/presets, GET/POST/DELETE /api/results
+- `server/vacancyCache.ts` — Vacancy search with PostgreSQL caching (TTL 3h): POST /api/vacancies/search, GET /api/vacancies/cache-stats
 - `server/storage.ts` — Database access layer (Drizzle ORM)
 - `shared/schema.ts` — Drizzle schema: users, presets, saved_results tables
 

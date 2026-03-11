@@ -5,6 +5,7 @@ import { pool } from "./db.js";
 import { authRouter } from "./auth.js";
 import { apiRouter } from "./routes.js";
 import { adminRouter } from "./admin.js";
+import { vacancyRouter } from "./vacancyCache.js";
 import { db } from "./db.js";
 import { sql } from "drizzle-orm";
 
@@ -43,6 +44,7 @@ app.use(
 
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/vacancies", vacancyRouter);
 app.use("/api", apiRouter);
 
 app.get("/api/health", (_req, res) => {
@@ -120,6 +122,19 @@ async function initDb() {
       key VARCHAR(100) UNIQUE NOT NULL,
       value TEXT NOT NULL DEFAULT '',
       updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS vacancy_cache (
+      id SERIAL PRIMARY KEY,
+      cache_key VARCHAR(64) UNIQUE NOT NULL,
+      search_params JSONB NOT NULL,
+      hh_items JSONB NOT NULL DEFAULT '[]',
+      tv_items JSONB NOT NULL DEFAULT '[]',
+      hh_count INTEGER NOT NULL DEFAULT 0,
+      tv_count INTEGER NOT NULL DEFAULT 0,
+      cached_at TIMESTAMP DEFAULT NOW() NOT NULL
     )
   `);
 

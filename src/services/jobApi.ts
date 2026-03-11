@@ -32,14 +32,6 @@ interface HhVacancy {
   created_at?: string;
 }
 
-interface HhResponse {
-  found: number;
-  items: HhVacancy[];
-  pages: number;
-  per_page: number;
-  page: number;
-}
-
 interface TrudvsemVacancy {
   vacancy: {
     id: string;
@@ -60,12 +52,10 @@ interface TrudvsemVacancy {
   };
 }
 
-interface TrudvsemResponse {
-  status: string;
-  meta?: { total: number; limit: number };
-  results?: {
-    vacancies: TrudvsemVacancy[];
-  };
+export interface CachedSearchResult {
+  jobs: JobItem[];
+  cachedAt: string | null;
+  fromCache: boolean;
 }
 
 function buildSearchText(quiz: QuizState): string {
@@ -153,18 +143,18 @@ function collectHhRoleIds(quiz: QuizState): number[] {
   return [...ids];
 }
 
-function mapExperienceToHh(exp: string): string | null {
+function mapExperienceToHh(exp: string): string {
   if (exp === "Нет опыта") return "noExperience";
   if (exp === "От 1 до 3 лет") return "between1And3";
   if (exp === "От 3 до 6 лет") return "between3And6";
   if (exp === "Более 6 лет") return "moreThan6";
-  return null;
+  return "";
 }
 
-function parseSalaryMin(salaryMin: string): number | null {
+function parseSalaryMin(salaryMin: string): number {
   const opt = salaryData.find(s => s.label === salaryMin);
   if (opt && opt.value > 0) return opt.value;
-  return null;
+  return 0;
 }
 
 function formatSalary(from: number | null, to: number | null, currency: string): string {
@@ -300,249 +290,100 @@ function normalizeTrudvsemVacancy(item: TrudvsemVacancy): JobItem {
   };
 }
 
-async function fetchWithRetry(url: string, retries = 2, delay = 1500): Promise<Response> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(url);
-      const ct = res.headers.get("content-type") || "";
-      if (res.ok && ct.includes("json")) return res;
-      if (res.ok && !ct.includes("json")) {
-        console.warn(`[fetch] attempt ${attempt + 1}: unexpected content-type "${ct}", retrying...`);
-        if (attempt < retries) {
-          await new Promise(r => setTimeout(r, delay));
-          continue;
-        }
-        throw new Error(`Сервер вернул неожиданный формат ответа (${ct || "пустой"})`);
-      }
-      if (!res.ok) {
-        console.warn(`[fetch] attempt ${attempt + 1}: status ${res.status}, retrying...`);
-        if (attempt < retries) {
-          await new Promise(r => setTimeout(r, delay));
-          continue;
-        }
-        throw new Error(`API error: ${res.status}`);
-      }
-      return res;
-    } catch (err) {
-      if (attempt < retries && err instanceof TypeError) {
-        console.warn(`[fetch] attempt ${attempt + 1}: network error, retrying...`);
-        await new Promise(r => setTimeout(r, delay));
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error("Не удалось получить ответ после нескольких попыток");
-}
-
-async function doHhSearch(params: URLSearchParams): Promise<{ data: HhResponse; url: string }> {
-  const url = `/api/hh/vacancies?${params.toString()}`;
-  console.log("[HH] request:", url);
-  const res = await fetchWithRetry(url);
-  const data: HhResponse = await res.json();
-  console.log("[HH] found:", data.found, "items:", data.items?.length);
-  return { data, url };
-}
-
-export async function searchHhVacancies(quiz: QuizState): Promise<JobItem[]> {
+function buildSearchParams(quiz: QuizState) {
   const searchText = buildSearchText(quiz);
-  if (!searchText) return [];
-
   const notText = buildNotKeywords(quiz);
-  const fullText = notText ? `${searchText} ${notText}` : searchText;
-
-  const baseParams = new URLSearchParams({
-    text: fullText,
-    per_page: "100",
-    page: "0",
-    schedule: "remote",
-  });
-
   const roleIds = collectHhRoleIds(quiz);
-  roleIds.forEach(id => baseParams.append("professional_role", String(id)));
+  const experience = mapExperienceToHh(quiz.totalExperience);
+  const salaryMin = parseSalaryMin(quiz.salaryMin);
 
+  let area = "113";
   if (quiz.region) {
     const areaId = hhAreaMap[quiz.region.id];
-    if (areaId) baseParams.set("area", String(areaId));
-  } else {
-    baseParams.set("area", "113");
+    if (areaId) area = String(areaId);
   }
 
-  const hhExp = mapExperienceToHh(quiz.totalExperience);
-  if (hhExp) baseParams.set("experience", hhExp);
-
-  const salaryMin = parseSalaryMin(quiz.salaryMin);
-  if (salaryMin) {
-    baseParams.set("salary", String(salaryMin));
-    baseParams.set("currency", "RUR");
-    baseParams.set("only_with_salary", "true");
+  let trudvsemRegionCode = "";
+  if (quiz.region) {
+    const code = trudvsemRegionCodeMap[quiz.region.id];
+    if (code) trudvsemRegionCode = code;
   }
 
+  const employmentTypes: string[] = [];
   for (const emp of quiz.employmentTypes) {
     const opt = employmentData.find(e => e.label === emp);
-    if (opt) baseParams.append("employment", opt.hhValue);
+    if (opt) employmentTypes.push(opt.hhValue);
   }
 
+  const schedules: string[] = [];
   for (const sch of quiz.schedules) {
     const opt = scheduleData.find(s => s.label === sch);
-    if (opt) baseParams.append("work_schedule_by_days", opt.hhValue);
+    if (opt) schedules.push(opt.hhValue);
   }
 
-  if (quiz.acceptHandicapped) {
-    baseParams.append("label", "accept_handicapped");
-  }
-
-  let { data } = await doHhSearch(baseParams);
-  let items = (data.items || []).filter(isStrictlyRemoteHh);
-  let successParams = baseParams;
-  let successPages = data.pages;
-
-  if (items.length === 0 && (baseParams.has("experience") || baseParams.has("salary"))) {
-    console.log("[HH] strict search returned 0, trying without experience/salary...");
-    const relaxedParams = new URLSearchParams({ text: fullText, per_page: "100", page: "0", schedule: "remote", area: "113" });
-    roleIds.forEach(id => relaxedParams.append("professional_role", String(id)));
-    for (const emp of quiz.employmentTypes) {
-      const opt = employmentData.find(e => e.label === emp);
-      if (opt) relaxedParams.append("employment", opt.hhValue);
-    }
-    for (const sch of quiz.schedules) {
-      const opt = scheduleData.find(s => s.label === sch);
-      if (opt) relaxedParams.append("work_schedule_by_days", opt.hhValue);
-    }
-    if (quiz.acceptHandicapped) {
-      relaxedParams.append("label", "accept_handicapped");
-    }
-    const relaxed = await doHhSearch(relaxedParams);
-    items = (relaxed.data.items || []).filter(isStrictlyRemoteHh);
-    successParams = relaxedParams;
-    successPages = relaxed.data.pages;
-    console.log("[HH] relaxed search after remote filter:", items.length);
-  } else {
-    console.log("[HH] after remote filter:", items.length);
-  }
-
-  let allItems = [...items];
-  const maxPages = Math.min(successPages, 20);
-  for (let page = 1; page < maxPages; page++) {
-    const nextParams = new URLSearchParams(successParams);
-    nextParams.set("page", String(page));
-    try {
-      const nextPage = await doHhSearch(nextParams);
-      const nextItems = (nextPage.data.items || []).filter(isStrictlyRemoteHh);
-      if (nextItems.length === 0) break;
-      allItems.push(...nextItems);
-      console.log(`[HH] page ${page + 1} added: ${nextItems.length}, total: ${allItems.length}`);
-    } catch (e) {
-      console.warn(`[HH] page ${page + 1} failed, stopping pagination`);
-      break;
-    }
-  }
-
-  const normalized = allItems.map(normalizeHhVacancy).filter(j => isRussianLocation(j.location));
-  return normalized.filter(j => !matchesExclusions(`${j.title} ${j.description}`, quiz));
+  return {
+    searchText,
+    notText,
+    roleIds,
+    area,
+    experience,
+    salaryMin,
+    salaryCurrency: "RUR",
+    onlyWithSalary: salaryMin > 0,
+    employmentTypes,
+    schedules,
+    acceptHandicapped: quiz.acceptHandicapped,
+    regionId: quiz.region?.id || "",
+    trudvsemRegionCode,
+  };
 }
 
-async function doTvSearch(url: string, params: URLSearchParams): Promise<{ data: TrudvsemResponse; fullUrl: string }> {
-  const fullUrl = `${url}?${params.toString()}`;
-  console.log("[TV] request:", fullUrl);
-  const res = await fetchWithRetry(fullUrl, 1, 1000);
-  const data: TrudvsemResponse = await res.json();
-  console.log("[TV] total:", data.meta?.total, "vacancies:", data.results?.vacancies?.length);
-  return { data, fullUrl };
-}
-
-export async function searchTrudvsemVacancies(quiz: QuizState): Promise<JobItem[]> {
+export async function searchAllVacancies(quiz: QuizState, forceRefresh = false): Promise<CachedSearchResult> {
   const searchText = buildSearchText(quiz);
-  if (!searchText) return [];
+  if (!searchText) return { jobs: [], cachedAt: null, fromCache: false };
 
-  const fullSearchText = `${searchText} удалённая`;
-  const params = new URLSearchParams({ text: fullSearchText, offset: "0", limit: "100" });
+  const params = buildSearchParams(quiz);
+  const url = forceRefresh ? "/api/vacancies/search?refresh=true" : "/api/vacancies/search";
 
-  let url = "/api/trudvsem/vacancies";
-  const hasRegion = !!quiz.region;
-  if (hasRegion) {
-    const code = trudvsemRegionCodeMap[quiz.region!.id];
-    if (code) url = `/api/trudvsem/vacancies/region/${code}`;
+  console.log("[JobApi] sending search request to backend...");
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({ error: "Ошибка сервера" }));
+    throw new Error(errBody.error || `Ошибка: ${res.status}`);
   }
 
-  let successUrl = url;
-  let { data } = await doTvSearch(url, params);
-  let filtered = (data.results?.vacancies || []).filter(isRemoteTrudvsem);
+  const data = await res.json();
+  const { hhItems, tvItems, cachedAt, fromCache } = data;
 
-  if (filtered.length === 0 && hasRegion) {
-    console.log("[TV] regional search returned 0, trying without region...");
-    successUrl = "/api/trudvsem/vacancies";
-    const relaxed = await doTvSearch(successUrl, params);
-    data = relaxed.data;
-    filtered = (data.results?.vacancies || []).filter(isRemoteTrudvsem);
-    console.log("[TV] relaxed search after remote filter:", filtered.length);
-  } else {
-    console.log("[TV] after remote filter:", filtered.length);
-  }
+  console.log(`[JobApi] received: hh=${(hhItems || []).length}, tv=${(tvItems || []).length}, fromCache=${fromCache}`);
 
-  const totalAvailable = data.meta?.total || 0;
-  if (totalAvailable > 100 && filtered.length >= 50) {
-    const maxOffset = Math.min(totalAvailable, 1000);
-    for (let offset = 100; offset < maxOffset; offset += 100) {
-      const nextParams = new URLSearchParams({ text: fullSearchText, offset: String(offset), limit: "100" });
-      try {
-        const nextPage = await doTvSearch(successUrl, nextParams);
-        const nextFiltered = (nextPage.data.results?.vacancies || []).filter(isRemoteTrudvsem);
-        if (nextFiltered.length === 0) break;
-        filtered.push(...nextFiltered);
-        console.log(`[TV] offset ${offset} added: ${nextFiltered.length}, total: ${filtered.length}`);
-      } catch (e) {
-        console.warn(`[TV] offset ${offset} failed, stopping pagination`);
-        break;
-      }
-    }
-  }
+  const hhFiltered = (hhItems || []).filter(isStrictlyRemoteHh);
+  const hhNormalized = hhFiltered.map(normalizeHhVacancy).filter(j => isRussianLocation(j.location));
 
-  const normalized = filtered.map(normalizeTrudvsemVacancy).filter(j => isRussianLocation(j.location));
-  return normalized.filter(j => !matchesExclusions(`${j.title} ${j.description}`, quiz));
-}
+  const tvFiltered = (tvItems || []).filter(isRemoteTrudvsem);
+  const tvNormalized = tvFiltered.map(normalizeTrudvsemVacancy).filter(j => isRussianLocation(j.location));
 
-interface SearchResult {
-  jobs: JobItem[];
-  errors: string[];
-}
+  let allJobs = [
+    ...hhNormalized.filter(j => !matchesExclusions(`${j.title} ${j.description}`, quiz)),
+    ...tvNormalized.filter(j => !matchesExclusions(`${j.title} ${j.description}`, quiz)),
+  ];
 
-export async function searchAllVacancies(quiz: QuizState): Promise<JobItem[]> {
-  const results: SearchResult = { jobs: [], errors: [] };
-
-  const [hhResult, tvResult] = await Promise.allSettled([
-    searchHhVacancies(quiz),
-    searchTrudvsemVacancies(quiz),
-  ]);
-
-  if (hhResult.status === "fulfilled") {
-    results.jobs.push(...hhResult.value);
-  } else {
-    console.error("[Search] hh.ru failed:", hhResult.reason);
-    results.errors.push("hh.ru");
-  }
-
-  if (tvResult.status === "fulfilled") {
-    results.jobs.push(...tvResult.value);
-  } else {
-    console.error("[Search] trudvsem.ru failed:", tvResult.reason);
-    results.errors.push("trudvsem.ru");
-  }
-
-  if (results.errors.length > 0) {
-    console.warn("[Search] errors from:", results.errors.join(", "), "| jobs found:", results.jobs.length);
-  }
-
-  if (results.jobs.length === 0 && results.errors.length > 0) {
-    throw new Error(`Не удалось загрузить вакансии с ${results.errors.join(" и ")}. Возможно, сервисы временно недоступны — попробуйте через минуту.`);
-  }
-
-  results.jobs.sort((a, b) => {
+  allJobs.sort((a, b) => {
     const aRisky = a.companyScore?.level === "risky" ? 1 : 0;
     const bRisky = b.companyScore?.level === "risky" ? 1 : 0;
     if (aRisky !== bRisky) return aRisky - bRisky;
     return 0;
   });
 
-  return results.jobs;
+  return {
+    jobs: allJobs,
+    cachedAt: cachedAt || null,
+    fromCache: fromCache || false,
+  };
 }
